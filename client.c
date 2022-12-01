@@ -9,11 +9,18 @@
 #include <errno.h>
 #include <curses.h>
 
+
+//int socketDescriptors[1000];
+//struct sockaddr_in adresses[1000];
+
+
+
 int main(int argc, char *argv[]) {
 
     int ds = socket(PF_INET, SOCK_STREAM, 0);
-    int ds2 = socket(PF_INET, SOCK_STREAM, 0);
-    if (ds == -1){
+    int listenSocket = socket(PF_INET, SOCK_STREAM, 0);
+    if (ds == -1 || listenSocket == -1)
+    {
             perror("ERR : Socket creation went wrong.");
             exit(1);
     }
@@ -29,34 +36,38 @@ int main(int argc, char *argv[]) {
     //SOCKET PORT IS SET TO BE THE FIRST ARGUMENT THAT THIS PROGRAM WAS CALLED WITH
     if(atoi(argv[1]) != -1) {
         ad.sin_port = htons((short) atoi(argv[1]));
-        ad2.sin_port = htons((short) atoi(argv[1])*5);
+        ad2.sin_port = htons((short) atoi(argv[1])*5); //Port of listeningSocket is process' serverConnect port x 5
     }
 
     //Bind socket
     int res;
     res = bind(ds, (struct sockaddr*)&ad, sizeof(ad));
     if (res == -1) {
-        printf("ERR : Binding the socket went wrong.\n");
+        printf("ERR : Binding serverConnect socket went wrong.\n");
         exit(1);
     }
-    res = bind(ds2, (struct sockaddr*)&ad2, sizeof(ad2));
+    res = bind(listenSocket, (struct sockaddr*)&ad2, sizeof(ad2));
     if (res == -1) {
-        printf("ERR : Binding socket2 went wrong.\n");
+        printf("ERR : Binding listeningSocket went wrong.\n");
         exit(1);
     }
 
+    printf("DEBUG : binding went without problems");
     //1099 is the dedicated server port we chose.
     struct sockaddr_in sockServ;
     sockServ.sin_family = AF_INET;
     sockServ.sin_port = htons((short)1099);
     socklen_t lgAdr = sizeof(struct sockaddr_in);
+    printf("leaving now");
+    exit(0);
 
     int resConnexion = connect(ds, (struct sockaddr *)&sockServ, lgAdr);
-    if (resConnexion == -1) {
+    if (resConnexion == -1) 
+    {
         printf("ERR : Connection to server went wrong. Make sure server is started\n");
         exit(1);
     }
-
+    else printf("Successful connection to main server!");
 
     bool keepGoing = true;
     int errorTolerance = 1000;
@@ -88,18 +99,18 @@ int main(int argc, char *argv[]) {
                 //Code -1 means get ready to accept another connection
                 case -1:
                     printf("Server sent code -1, will attempt listen()\n");
-                    int resListen = listen(ds, 1000); //Go into listening mode
+                    int resListen = listen(listenSocket, 1000); //Go into listening mode
                     if (resListen != -1) printf("ERR : Socket failed to listen.");
                     struct sockaddr_in sockClient;
                     socklen_t lgAdr;
-                        int dsClient = accept(ds, (struct sockaddr*) &sockClient, &lgAdr);
-                        if(dsClient!= -1) printf("Accepting connection!");
+                        int dsClient = accept(listenSocket, (struct sockaddr*) &sockClient, &lgAdr);
+                        if(dsClient!= -1)
+                        {
+                             printf("Accepting connection!");
+                        }
                         else printf("Accepting the connection encountered a problem.");
-                        sleep(4);
-                        dsClient = accept(ds, (struct sockaddr*) &sockClient, &lgAdr);
-                        if(dsClient!= -1) printf("Accepting connection!");
                         close(ds);
-                        close(ds2);
+                        close(listenSocket);
                         exit(0);
                 break;
 
@@ -107,7 +118,7 @@ int main(int argc, char *argv[]) {
                 case -2:
                     printf("Server sent code -2, required this socket to close\n");
                     close(ds);
-                    close(ds2);
+                    close(listenSocket);
                     keepGoing=false;
                     exit(0);
                 break;
@@ -117,23 +128,34 @@ int main(int argc, char *argv[]) {
         }       //If received message is a positive integer it's a port that this client must attempt to connect to
         else
         {
-            printf("Server sent code %i, will attempt requesting connection to socket at that port\n", serverMessage);
+            printf("Server sent code %i, will attempt requesting connection to that process's listening socket\n", serverMessage);
             struct sockaddr_in sockNeighbour;
             sockNeighbour.sin_family = AF_INET;
-            sockNeighbour.sin_port = htons((short)serverMessage);
+            int targetPort = serverMessage*5;
+            sockNeighbour.sin_port = htons((short)targetPort);
             socklen_t lgAdr = sizeof(struct sockaddr_in);
 
-            int resConnexion = connect(ds2, (struct sockaddr *)&sockNeighbour, lgAdr);
+            struct sockaddr_in adNewConnec;
+            adNewConnec.sin_family = AF_INET;
+            adNewConnec.sin_addr.s_addr = INADDR_ANY;
+            int newSoc = socket(PF_INET, SOCK_STREAM, 0);
+            res = bind(newSoc, (struct sockaddr*)&adNewConnec, sizeof(adNewConnec));
+            perror("BINDING NEW CONNECTION SOCKET :");
+
+            int resConnexion = connect(newSoc, (struct sockaddr *)&sockNeighbour, lgAdr);
             if (resConnexion == -1) 
             {
                 printf("ERR : Connection to other client %i socket went wrong. ERR %d\n", serverMessage, errno);
                 perror("ERR ");
             }
-            else printf("Connection to friend %i successful!", serverMessage);
-
+            else 
+            {
+                printf("Connection to friend %i successful!", serverMessage);
+            }
                 sleep(5);
                 close(ds);
-                close(ds2);
+                close(listenSocket);
+                close(newSoc);
                 exit(0);
         }   
         }
@@ -145,3 +167,9 @@ int main(int argc, char *argv[]) {
     close(ds);
     return 0;
 }
+
+/*void registerSocket(int ds, struct sockaddr_in sock)
+{
+
+}
+*/
