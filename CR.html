@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="hai721i---programmation-répartie">HAI721I - PROGRAMMATION RÉPARTIE</h1>
+<h3 id="première-partie-du-projet"><strong>Première partie du projet</strong></h3>
+<p><em>Travail réalisé par Arthur SAPIN</em><br>
+<em>et Abla AHMARREF</em></p>
+<p>Pour ce projet, l’objectif est de créer un réseau de sockets en C à partir de fichiers de graphes dont on doit extraire les données. Chaque noeud du graphe représente un processus, et les arrêtes du graphe devront correspondre à des connexions par sockets entre les processus noeuds.</p>
+<p>L’objectif final du projet étant de colorer le graphe, les sockets sont mises en place pour assurer la communication entre voisins et s’assurer que des noeuds voisins ne se retrouvent jamais à partager une même couleur.</p>
+<h1 id="parsing-du-fichier-de-graphe">Parsing du fichier de graphe</h1>
+<p>Avant de créer le réseau, la première partie du projet consiste à extraire les informations à partir d’un fichier texte au format suivant :</p>
+<pre class=" language-c"><code class="prism  language-c">c SOURCE<span class="token punctuation">:</span> David <span class="token function">Johnson</span> <span class="token punctuation">(</span>dsj@research<span class="token punctuation">.</span>att<span class="token punctuation">.</span>com<span class="token punctuation">)</span>
+c
+c DESCRIPTION<span class="token punctuation">:</span> Random graph used in the paper
+c              "Optimization by Simulated Annealing<span class="token punctuation">:</span> An
+c               Experimental Evaluation<span class="token punctuation">;</span> Part II<span class="token punctuation">,</span> Graph
+c               Coloring and Number Partitioning" by
+c              David S<span class="token punctuation">.</span> Johnson<span class="token punctuation">,</span> Cecilia R<span class="token punctuation">.</span> Aragon<span class="token punctuation">,</span> 
+c              Lyle A<span class="token punctuation">.</span> McGeoch and Catherine Schevon
+c              Operations Research<span class="token punctuation">,</span> <span class="token number">39</span><span class="token punctuation">,</span> <span class="token number">378</span><span class="token operator">-</span><span class="token function">406</span> <span class="token punctuation">(</span><span class="token number">1991</span><span class="token punctuation">)</span>
+c
+p edge <span class="token number">250</span> <span class="token number">31336</span>
+e <span class="token number">2</span> <span class="token number">1</span>
+e <span class="token number">3</span> <span class="token number">2</span>
+e <span class="token number">5</span> <span class="token number">2</span>
+e <span class="token number">5</span> <span class="token number">4</span>
+e <span class="token number">6</span> <span class="token number">1</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">(</span>etc<span class="token punctuation">.</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Ce fichier est lu par le serveur à l’aide de la fonction <strong>fopen()</strong> et on le parcourt ligne-par-ligne grâce à getline(). Les premières lignes du fichier ne sont pas pertinentes pour la création du graphe, on va donc boucler sur getline() pour faire défiler le fichier jusqu’à trouver la lettre p en début de ligne. On récupère alors la quantité de sommets attendus (ici 250), ce qui permettra au serveur de savoir combien de processus il doit normalement avoir de connectés. Puis on va récupérer les informations sur le graphe lui-même dans les lignes commençant par la lettre <strong>e</strong>.</p>
+<pre class=" language-c"><code class="prism  language-c"> <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>read <span class="token operator">=</span> <span class="token function">getline</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>line<span class="token punctuation">,</span> <span class="token operator">&amp;</span>len<span class="token punctuation">,</span> file<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+                <span class="token keyword">int</span> s1 <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+                <span class="token keyword">int</span> s2 <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+                <span class="token function">sscanf</span><span class="token punctuation">(</span>line<span class="token punctuation">,</span> <span class="token string">" e %i %i"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>s1<span class="token punctuation">,</span> <span class="token operator">&amp;</span>s2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                voisins<span class="token punctuation">[</span>s1<span class="token punctuation">]</span><span class="token punctuation">[</span>s2<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+                voisins<span class="token punctuation">[</span>s2<span class="token punctuation">]</span><span class="token punctuation">[</span>s1<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+</code></pre>
+<p>Nous avons choisi de représenter le graphe par une matrice à deux dimensions. Le premier tableau de la matrice représente les indices des noeuds, et on va consigner dans le deuxième axe aux indices pertinents la présence de voisins éventuels.</p>
+<h1 id="larchitecture">L’architecture</h1>
+<p>Nous avons choisi de séparer le problème en trois entités :</p>
+<ul>
+<li>Un serveur central, qui parse le fichier de graphe et qui sera connu de tous les processus clients ;</li>
+<li>Les processus clients qui représentent les noeuds du graphe;</li>
+<li>Un programme “launcher” qui s’occupe de lancer les processus clients en fonction du nombre de noeuds dans le graphe.</li>
+</ul>
+<p>C’est le serveur et le processus client qui assurent l’essentiel des fonctionnalités, le programme lanceur jouant un rôle secondaire.</p>
+<p>Nous avons considéré deux approches pour réaliser le graphe :</p>
+<ol>
+<li>Une fois tous les processus connectés au serveur, le serveur transmet à chaque noeud un tableau des processus voisins, puis les processus se seraient ensuite chargés eux-mêmes d’établir des sockets avec leurs voisins, le serveur ne jouant plus de rôle actif à partir de ce stade.</li>
+<li>C’est le serveur seul qui a autorité et connaissance de la matrice de voisinage, et c’est lui qui donne par envoi de message des ordres de connexion aux processus, en leur spécifiant le port auquel ils doivent se connecter. Outre intervention serveur, les processus se comportent de manière “passive” dans cette approche.</li>
+</ol>
+<p>Bien que le concept n°1 nous paraissait plus intéressant à certains niveaux, notamment car plus simple à comprendre dans la théorie et plus direct à l’exécution, nous avons rencontré des difficultés lorsque nous avons tenté de la mettre en pratique. Au final, nous avons donc opté pour une approche similaire à l’idée n°2.</p>
+<p>Un autre avantage de la méthode n°2 est qu’elle permet plus facilement de contourner le problème des doublons.</p>
+<p>En effet, puisque le serveur parcourt l’entièreté de la matrice et a connaissance de l’intégralité du graphe, il est plus simple de prendre note de quelles arêtes existent ont déjà été créées et d’éviter la redondance. Avec l’approche n°1, il serait nécessaire de faire état, pour chaque processus, des voisins qui ont déjà émis une demande de connexion pour éviter de créer plus de sockets que nécessaires.</p>
+<h1 id="la-réalisation-concrète-et-ses-limites">La réalisation concrète et ses limites</h1>
+<p>Nous avons eu un certain nombre de problèmes lors du développement ‘en théorie’ simple des fichiers sources pour mettre en place notre idée. Le résultat final ne répond malheureusement qu’à une fraction de la problématique et bien que nous ayons réussi à réaliser un réseau client-serveur classique, nous n’avons pas réussi à construire le graphe tel que demandé.</p>
+<p>Les processus clients sont effectivement capables de recevoir des messages de la part du serveur, mais nous avions faussement supposé que l’interconnexion des clients serait d’une complexité similaire à celle de la connexion client-serveur. L’idée était que le serveur communiquerait avec les clients via des messages transportant uniquement des entiers.</p>
+<ul>
+<li>Les entiers négatifs correspondraient à des codes bien précis, comme par exemple se mettre en écoute (-1) ou fermer la socket (-2).</li>
+<li>Les entiers positifs représenteraient un ordre de connexion à un processus voisin, où l’entier en question est le port de la socket du processus auquel le client doit se connecter.</li>
+</ul>
+<p>Le premier point est fonctionnel, mais nous ne sommes pas parvenus à faire marcher les connexions interclients déclenchées par les messages du serveur. Cela est notamment dû à une erreur de compréhension au départ lors de la phase de réflexion, nous avons pensé notre approche en supposant que un port de la machine pourrait représenter un processus; et donc que les ports 2000 à 2000+n pourraient chacun représenter à eux seuls un processus.</p>
+<p>Or ce n’est bien entendu <strong>pas le cas en pratique</strong>, puisqu’on ne peut pas bind plusieurs sockets sur un même port et que chaque arête doit avoir son propre couple de sockets. Cette architecture fonctionne dans le modèle client-serveur typique, mais dans le contexte du graphe où chaque noeud peut-être connecté à 2, 5, <strong>n</strong> autres processus, c’est une simplification erronnée du problème.</p>
+<p>En conclusion, nous aurions donc probablement dû privilégier un algorithme dynamique d’allocation et de connexion de sockets pour les processus, où le processus client créée une nouvelle socket à chaque fois qu’il reçoit un ordre de connexion de la part du serveur, puis stocke la nouvelle socket dans un tableau individuel.</p>
+<p><em>Arthur Sapin</em><br>
+Master 1 Informatique, Génie Logiciel<br>
+<strong>Novembre 2022</strong></p>
+</div>
+</body>
+
+</html>
