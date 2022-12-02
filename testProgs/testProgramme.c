@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in sockServ;
     sockServ.sin_family = AF_INET;
     sockServ.sin_port = htons((short) atoi(argv[2]));
+    sockServ.sin_port = htons((short) 1099);
     socklen_t lgAdr = sizeof(struct sockaddr_in);
 
     int resConnexion = connect(ds, (struct sockaddr *)&sockServ, lgAdr);
