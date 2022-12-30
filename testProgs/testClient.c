@@ -33,4 +33,12 @@ int main(int argc, char *argv[])
 	//socklen_t_lgA = sizeof(struct sockaddr_in);
 	int res = connect(dSock, (struct sockaddr *) &adServ, lgA);
 
+	//Upon finish connect()
+	int recvdMsg;
+	int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
+	if (rec==-1)
+	{
+		perror("Reception issue");
+	}
+	printf("Receive value %d\n", rec);
 }
