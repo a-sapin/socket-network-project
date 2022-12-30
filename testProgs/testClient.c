@@ -14,6 +14,9 @@
 int otherClientsDS[5000];
 int dSock;
 int dSockServ;
+
+int n=-1;
+
 struct sockaddr_in ad;
 socklen_t lgA = sizeof(struct sockaddr_in);
 
@@ -27,10 +30,10 @@ void *threadAccept(void *args)
 	if (newDSClient==-1) perror("Accepting connection issues ");
 	else
 	{
-		int newFriendPort;
-		int rec = recv(newDSClient, &newFriendPort, sizeof(int), 0);
+		int newFriendN;
+		int rec = recv(newDSClient, &newFriendN, sizeof(int), 0);
 		perror("\tTHREAD RECEIVE FROM CLIENT ");
-		printf("\tTHREAD - just accepted connection request by fellow client on %d !\n", ntohs(newFriendPort));
+		printf("\tTHREAD - just accepted connection request by fellow client number %d !\n", newFriendN);
 
 	}
 	return NULL;
@@ -77,7 +80,7 @@ void *receiveAndConnect(void *args)
 			otherClientsDS[a] = res; //THis is the new socket descriptor that results from the connection
 
 			//Sending a "business card"
-			int greetMsg = ntohs(adNewS.sin_port);
+			int greetMsg = n;
 			res = send(newS, &greetMsg, sizeof(greetMsg), 0);
 
 		}
@@ -117,13 +120,15 @@ int main(int argc, char *argv[])
 	//Upon finish connect()
 	
 	//Code to receive msg
-				/*	int recvdMsg;
-					int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
-					if (rec==-1)
-					{
+				int recvdMsg;
+				int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
+				if (rec==-1)
+				{
 						perror("Reception issue");
-					}
-					printf("Receive value %d\n", recvdMsg);  */
+						exit(-1);
+				}
+				printf("\t!!!!! Server told me that I'm #%d !!!!!!\n", recvdMsg);
+				n = recvdMsg;
 
 
 	//Opening a second socket which will act as server

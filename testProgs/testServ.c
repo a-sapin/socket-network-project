@@ -14,7 +14,7 @@ int lifetime = 120; //Duration for the server program
 
 int main(int argc, char *argv[]) 
 {
-	int clients_awaited = 3;
+	int clients_awaited = 4;
 	int dSock = socket(PF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in ad;
 	ad.sin_family = AF_INET;
@@ -72,6 +72,12 @@ int main(int argc, char *argv[])
 			int temp = ntohs(adClient.sin_port);
 			printf("Client %s:%d just connected!\n", str, temp);
 			printf("Socket descriptor : %d\n", dSClient);
+
+
+
+			printf("You are client number %d!", clientsJoined);
+			int sd = send(dSClient, &clientsJoined, sizeof(clientsJoined), 0);
+			
 			//Adding socket-to-client to array
 			clientsDSArray[clientsJoined] = dSClient;
 			clientsJoined++;
@@ -104,7 +110,9 @@ int main(int argc, char *argv[])
   			{
   				int sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
   				printf("\tSending %d to client %d \n", portAnswered, i-1);
+
   			}
+
 
 
 
