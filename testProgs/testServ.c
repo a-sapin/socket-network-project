@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <curses.h>
+#include <pthread.h>
 
 int main(int argc, char *argv[]) 
 {
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
 
 
 	//Listening now
-	int lis = listen(dSock, 1);
+	int lis = listen(dSock, 100);
 	if (lis==-1)
 	{
 		perror("LISTEN ERR ");
@@ -78,15 +79,23 @@ int main(int argc, char *argv[])
 	}
 
 	printf("All awaited clients are logged in!\n");
-	sleep(5);
+	sleep(1);
+	int clients2ndDS[clients_awaited];
 	
 	for (int i = 0; i < clientsJoined; ++i)
   	{
-  		int msgToSend = 5;
+		//Code to SEND a message to every client  		
+					/*int msgToSend = 5;
+					printf("Sending 5 to client %d \n", clientsDSArray[i]);
+			    	int sd = send(clientsDSArray[i], &msgToSend, sizeof(msgToSend), 0);
+			    	perror("Send ");
+			    	*/
+  		int portAnswered;
 
-		printf("Sending 5 to client %d \n", clientsDSArray[i]);
-    	int sd = send(clientsDSArray[i], &msgToSend, sizeof(msgToSend), 0);
-    	perror("Send ");
+  		int rec = recv(clientsDSArray[i], &portAnswered, sizeof(int), 0);
+  		if (rec==-1) perror("RECEIVE :");
+  		printf("Fetched answer %d from client#%d", portAnswered, i);
+  		clients2ndDS[i] = portAnswered;
   	}
 	
 
