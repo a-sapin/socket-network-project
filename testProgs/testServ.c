@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
 		if (dSClient!=-1)
 		{
 			//TESTIFICATE
-
+			  		//int msgToSend = 5;
+					//int sd = send(dSClient, &msgToSend, sizeof(msgToSend), 0);
 
 			inet_ntop(AF_INET, &(adClient.sin_addr), str, INET_ADDRSTRLEN);
 			int temp = ntohs(adClient.sin_port);
@@ -71,22 +72,23 @@ int main(int argc, char *argv[])
 			//Adding socket-to-client to array
 			clientsDSArray[clientsJoined] = dSClient;
 			clientsJoined++;
+
 		}
 		else perror("Accept problem");
 	}
 
 	printf("All awaited clients are logged in!\n");
-
-
-	for (int i = 1; i < clientsJoined; ++i)
+	sleep(5);
+	
+	for (int i = 0; i < clientsJoined; ++i)
   	{
   		int msgToSend = 5;
 
-		printf("Sending 5 to client %d \n", clientsDSArray[clientsJoined]);
-    	int sd = send(clientsDSArray[clientsJoined], &msgToSend, sizeof(msgToSend), 0);
+		printf("Sending 5 to client %d \n", clientsDSArray[i]);
+    	int sd = send(clientsDSArray[i], &msgToSend, sizeof(msgToSend), 0);
     	perror("Send ");
   	}
-
+	
 
 
 	

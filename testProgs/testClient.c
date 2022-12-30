@@ -40,5 +40,5 @@ int main(int argc, char *argv[])
 	{
 		perror("Reception issue");
 	}
-	printf("Receive value %d\n", rec);
+	printf("Receive value %d\n", recvdMsg);
 }
