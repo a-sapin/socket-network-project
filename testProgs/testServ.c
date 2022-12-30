@@ -96,6 +96,12 @@ int main(int argc, char *argv[])
   		if (rec==-1) perror("RECEIVE :");
   		printf("Fetched answer %d from client#%d", portAnswered, i);
   		clients2ndDS[i] = portAnswered;
+
+  		//SEND test
+  		int msgToSend = 5;
+					printf("Sending 5 to client %d \n", clientsDSArray[i]);
+			    	int sd = send(clientsDSArray[i], &msgToSend, sizeof(msgToSend), 0);
+			    	perror("Send ");
   	}
 	
 

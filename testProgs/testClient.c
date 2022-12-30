@@ -10,12 +10,29 @@
 #include <curses.h>
 #include <pthread.h>
 
+int otherClientsDS[5000];
+int dSock;
+struct sockaddr_in ad;
+socklen_t lgA = sizeof(struct sockaddr_in);
+
+
 
 void *threadAccept(void *args)
 {
 	sleep(0.5);
 	printf("\tGeneric thread guy! %d\n", * (int*)args);
 	return NULL;
+}
+
+void *receiveAndConnect(void *args)
+{
+	int recvdMsg;
+	int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
+	if (rec==-1)
+	{
+		perror("\tTHREAD RECEIVE - Reception issue");
+	}
+	printf("Receive value %d\n", recvdMsg);
 }
 
 
@@ -27,12 +44,10 @@ int main(int argc, char *argv[])
 		perror("You need exactly one parameter (IP address of server network).");
 		exit(-1);
 	}
-	int dSock = socket(PF_INET, SOCK_STREAM, 0);
-	struct sockaddr_in ad;
+
 	ad.sin_family = AF_INET;
 	ad.sin_addr.s_addr = INADDR_ANY;
-	socklen_t lgA = sizeof(struct sockaddr_in);
-
+	dSock = socket(PF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in adServ ;
 	adServ.sin_family = AF_INET; 
@@ -80,7 +95,10 @@ int main(int argc, char *argv[])
 	//Starting thread to receive
 	printf("Now starting a thread!\n");
 	pthread_t id;
+	pthread_t id2;
   	int parameter = 21;
   	pthread_create(&id, NULL, threadAccept, &parameter); //Starting thread using method threadAccept() with "parameter" input
-  	sleep(1);
+  	pthread_create(&id2, NULL, receiveAndConnect, NULL);
+  	sleep(20);
+  	exit(0);
 }
