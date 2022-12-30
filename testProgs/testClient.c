@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <curses.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 int otherClientsDS[5000];
 int dSock;
@@ -26,13 +27,39 @@ void *threadAccept(void *args)
 
 void *receiveAndConnect(void *args)
 {
-	int recvdMsg;
-	int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
-	if (rec==-1)
+	bool continuity = true;
+
+	while (continuity)
 	{
-		perror("\tTHREAD RECEIVE - Reception issue");
+		int recvdMsg=-1;
+		int rec = -1;
+		rec = recv(dSock, &recvdMsg, sizeof(int), 0);
+		perror("\tTHREAD RECEIVE ");
+		if (rec==-1)
+		{
+			perror("\tTHREAD RECEIVE - Reception issue");
+			continuity = false;
+		}
+		printf("SERVER SENT MESSAGE : %d\n", recvdMsg);
+
+		struct sockaddr_in adNeigh;
+		adNeigh.sin_family = AF_INET;
+		adNeigh.sin_addr.s_addr = INADDR_ANY;
+		adNeigh.sin_port = htons(recvdMsg);
+		//inet_pton(AF_INET, argv[1], &(adServ.sin_addr));
+
+		int newS = socket(PF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in adNewS;
+		adNewS.sin_family = AF_INET;
+		adNewS.sin_addr.s_addr = INADDR_ANY;
+
+
+		int res = connect(newS, (struct sockaddr *) &adNeigh, lgA);
+		perror("\tTHREAD connection ");
+		sleep(1);
+
 	}
-	printf("Receive value %d\n", recvdMsg);
+	
 }
 
 
@@ -99,6 +126,6 @@ int main(int argc, char *argv[])
   	int parameter = 21;
   	pthread_create(&id, NULL, threadAccept, &parameter); //Starting thread using method threadAccept() with "parameter" input
   	pthread_create(&id2, NULL, receiveAndConnect, NULL);
-  	sleep(20);
+  	sleep(30);
   	exit(0);
 }
