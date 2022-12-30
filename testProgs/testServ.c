@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
 
 
-			printf("You are client number %d!", clientsJoined);
+			printf("Registered as client #%d!\n", clientsJoined);
 			int sd = send(dSClient, &clientsJoined, sizeof(clientsJoined), 0);
 			
 			//Adding socket-to-client to array
