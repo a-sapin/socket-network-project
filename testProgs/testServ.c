@@ -10,6 +10,8 @@
 #include <curses.h>
 #include <pthread.h>
 
+int lifetime = 120; //Duration for the server program
+
 int main(int argc, char *argv[]) 
 {
 	int clients_awaited = 3;
@@ -102,13 +104,22 @@ int main(int argc, char *argv[])
   			{
   				int sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
   				printf("\tSending %d to client %d \n", portAnswered, i-1);
-  				portAnswered = -5;
-  				sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
-  				portAnswered = 25;
-  				sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
   			}
 
+
+
+
   	}
+
+  	//SERVER STAYS ACTIVE (with all sockets) FOR ITS LIFETIME VARIABLE IN SECONDS
+  		if (lifetime<0)
+  		{
+  			while(true)
+  			{
+
+  			}
+  		}
+  		else sleep(lifetime);
 	
 
 

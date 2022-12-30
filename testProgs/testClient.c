@@ -13,6 +13,7 @@
 
 int otherClientsDS[5000];
 int dSock;
+int dSockServ;
 struct sockaddr_in ad;
 socklen_t lgA = sizeof(struct sockaddr_in);
 
@@ -21,7 +22,17 @@ socklen_t lgA = sizeof(struct sockaddr_in);
 void *threadAccept(void *args)
 {
 	sleep(0.5);
-	printf("\tGeneric thread guy! %d\n", * (int*)args);
+	struct sockaddr_in adNClient;
+	int newDSClient = accept(dSockServ, (struct sockaddr *) &adNClient, &lgA);
+	if (newDSClient==-1) perror("Accepting connection issues ");
+	else
+	{
+		int newFriendPort;
+		int rec = recv(newDSClient, &newFriendPort, sizeof(int), 0);
+		perror("\tTHREAD RECEIVE FROM CLIENT ");
+		printf("\tTHREAD - just accepted connection request by fellow client on %d !\n", ntohs(newFriendPort));
+
+	}
 	return NULL;
 }
 
@@ -31,11 +42,10 @@ void *receiveAndConnect(void *args)
 
 	while (continuity)
 	{
-		int recvdMsg=-1;
+		int recvdMsg = -1;
 		int rec = -1;
 		rec = recv(dSock, &recvdMsg, sizeof(int), 0);
-		perror("\tTHREAD RECEIVE ");
-		if (rec==-1)
+		if (rec== -1)
 		{
 			perror("\tTHREAD RECEIVE - Reception issue");
 			continuity = false;
@@ -55,7 +65,22 @@ void *receiveAndConnect(void *args)
 
 
 		int res = connect(newS, (struct sockaddr *) &adNeigh, lgA);
-		perror("\tTHREAD connection ");
+		if (res==-1) perror("Connect problem ");
+		else
+		{
+			printf("\tTHREAD - Successful connection to fellow client socket!\n");
+			int a=0;
+			while (otherClientsDS[a] != -7)
+			{
+				a++;
+			}
+			otherClientsDS[a] = res; //THis is the new socket descriptor that results from the connection
+
+			//Sending a "business card"
+			int greetMsg = ntohs(adNewS.sin_port);
+			res = send(newS, &greetMsg, sizeof(greetMsg), 0);
+
+		}
 		sleep(1);
 
 	}
@@ -65,6 +90,10 @@ void *receiveAndConnect(void *args)
 
 int main(int argc, char *argv[]) 
 {
+	for (int i=0; i<(sizeof(otherClientsDS)/sizeof(otherClientsDS[0])); i++)
+	{
+		otherClientsDS[i] = -7;
+	}
 
 	if (argc!= 2)
 	{
@@ -98,7 +127,7 @@ int main(int argc, char *argv[])
 
 
 	//Opening a second socket which will act as server
-	int dSockServ = socket(PF_INET, SOCK_STREAM, 0);
+	dSockServ = socket(PF_INET, SOCK_STREAM, 0);
 	int bnd = bind(dSockServ, (struct sockaddr*)&ad, sizeof(ad));
 	if(bnd==-1) perror("BINDING ERR ");
 	
