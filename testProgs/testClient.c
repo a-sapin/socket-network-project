@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #define CAP 5000
+#define LIFETIME 60
 int otherClientsDS[CAP];
 int cursor=0;
 int dSock;
@@ -128,9 +129,15 @@ int main(int argc, char *argv[])
 	//int res = inet_pton(AF_INET, ”197.50.51.10”, &(adServ.sin_addr));
 	//socklen_t_lgA = sizeof(struct sockaddr_in);
 	int res = connect(dSock, (struct sockaddr *) &adServ, lgA);
+	if (res==-1) 
+		{
+			perror("Connection problem ");
+			exit(-1);
+		}
 
 	//Upon finish connect()
-	
+	printf("Successful connection to starter server program!\n");
+
 	//Code to receive msg
 				int recvdMsg;
 				int rec = recv(dSock, &recvdMsg, sizeof(int), 0);
@@ -139,7 +146,7 @@ int main(int argc, char *argv[])
 						perror("Reception issue");
 						exit(-1);
 				}
-				printf("\t!!!!! Server told me that I'm #%d !!!!!!\n", recvdMsg);
+				printf("\t!!!!! Server says this is client #%d !!!!!!\n", recvdMsg);
 				n = recvdMsg;
 
 
@@ -156,22 +163,25 @@ int main(int argc, char *argv[])
 	struct sockaddr_in ad_2soc;
     socklen_t len = sizeof(ad_2soc);
     if (getsockname(dSockServ, (struct sockaddr *)&ad_2soc, &len) == -1) perror("getsockname");
-    else printf("Auxiliary 'server' client socket opened on port %d\n", ntohs(ad_2soc.sin_port));
+    else printf("Second listening client-socket now open on port %d\n", ntohs(ad_2soc.sin_port));
     //
 
     //Sending the PORT number for AUXILIARY SERV SOCKET
     	int msgToSend = ntohs(ad_2soc.sin_port);
-		printf("Sending my 2nd socket port to server!\n");
+		printf("\t-> Communicating second socket port to server.\n");
 		int sd = send(dSock, &msgToSend, sizeof(msgToSend), 0);
 		if (sd==-1) perror("Send ");
 
 	//Starting thread to receive
-	printf("Now starting a thread!\n");
+	printf("Launching thread 1 and 2 for accepting connections and receiving messages from server.\n");
 	pthread_t id;
 	pthread_t id2;
   	int parameter = 21;
   	pthread_create(&id, NULL, threadAccept, &parameter); //Starting thread using method threadAccept() with "parameter" input
   	pthread_create(&id2, NULL, receiveAndConnect, NULL);
-  	sleep(60);
+  	
+  	//After 60 seconds, this client is killed to free sockets and memory.
+  	sleep(LIFETIME);
+  	printf("Standby delay reached, exit");
   	exit(0);
 }

@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
 
         // Fetch amount of vertices
         sscanf(line, "p edge %i", &vertices);
-        printf("Found graph has %i vertices\n", vertices);
+        printf("-WELCOME TO SERVER PROGRAM-\n");
+        printf("\t-> The chosen graph file has %i vertices.\n\n", vertices);
         vertices += 1;
 
         // Two dimensional matrix links a specific leaf with its neighbours (using 0's and 1's)
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
 
 	char str[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(ad.sin_addr), str, INET_ADDRSTRLEN);
-	printf("Server is using IP %s \n", str);
+	//printf("Server is using IP %s \n", str);
 
 
 	//Listening now
@@ -129,13 +130,13 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		printf("Server is ready and bound!\n");
+		printf("Server socket is bound and listening!\n");
 	}
 
 
 	struct sockaddr_in adClient;
 	socklen_t lgA = sizeof(struct sockaddr_in);
-	printf("=Accept() starting now=\n");
+	printf("=Ready to Accept() clients now=\n");
 
 	int clientsDSArray[clients_awaited];
 	int clientsJoined = 0;
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 
 			inet_ntop(AF_INET, &(adClient.sin_addr), str, INET_ADDRSTRLEN);
 			int temp = ntohs(adClient.sin_port);
-			printf("Client %s:%d just connected!\n", str, temp);
+			printf("\nClient %s:%d just connected!\n", str, temp);
 			printf("Socket descriptor : %d\n", dSClient);
 
 
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
 		else perror("Accept problem");
 	}
 
-	printf("All awaited clients are logged in!\n");
+	printf("All expected clients are now logged in!\n");
 	sleep(1);
 	int clients2ndDS[clients_awaited];
 	
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
   		clients2ndDS[i] = portAnswered;
 
   		//TEMP CODE//
-  			if(i>0)
+  		/*	if(i>0)
   			{
   				int sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
   				printf("\tSending %d to client %d \n", portAnswered, i-1);
@@ -199,13 +200,44 @@ int main(int argc, char *argv[])
   					printf("\tSending %d to client %d \n", portAnswered, i-2);
   				}
 
-  			}
+  			}	*/
+
+
 
 
 
 
 
   	}
+
+  	  	//GOING THROUGH THE MATRIX
+  		printf("[EXPLORING GRAPH MATRIX]\n");
+
+  		for(int z=0; z<vertices-1; z++)
+  		{
+  			printf("\t[ROW %d]\n", z);
+  			for(int y=0; y<vertices-1; y++)
+  			{
+  				printf("\t\t[LINE %d]", y);
+  				if (voisins[z][y]==1)
+  				{
+  					int receiverSock = clientsDSArray[z];
+					int targetPort = clients2ndDS[y];
+  					int sd = send(receiverSock, &targetPort, sizeof(targetPort), 0);
+  					if (sd==-1) perror("Sending issue ");
+  					printf(" %d---%d\n", z, y);
+  					printf("\t\t==Sending %d to client %d==\n", targetPort, z);
+
+
+  					voisins[y][z]=0;
+  				}
+  				printf("\n");
+  			}
+  		}
+
+  		printf("[FINISHED GRAPH CREATION, GOING INTO STANDBY]\n");
+
+
 
   	//SERVER STAYS ACTIVE (with all sockets) FOR ITS LIFETIME VARIABLE IN SECONDS
   		if (lifetime<0)
