@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	int clientsDSArray[clients_awaited];
 	int clientsJoined = 0;
 
-	while (clientsJoined<clients_awaited)
+	while (clientsJoined<clients_awaited-1)
 	{
 		int dSClient = accept(dSock, (struct sockaddr *) &adClient, &lgA);
 
@@ -192,6 +192,12 @@ int main(int argc, char *argv[])
   			{
   				int sd = send(clientsDSArray[i-1], &portAnswered, sizeof(portAnswered), 0);
   				printf("\tSending %d to client %d \n", portAnswered, i-1);
+
+  				if(i==3)
+  				{
+  					sd = send(clientsDSArray[i-2], &portAnswered, sizeof(portAnswered), 0);
+  					printf("\tSending %d to client %d \n", portAnswered, i-2);
+  				}
 
   			}
 

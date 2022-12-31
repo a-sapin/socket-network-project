@@ -11,7 +11,9 @@
 #include <pthread.h>
 #include <stdbool.h>
 
-int otherClientsDS[5000];
+#define CAP 5000
+int otherClientsDS[CAP];
+int cursor=0;
 int dSock;
 int dSockServ;
 
@@ -20,26 +22,41 @@ int n=-1;
 struct sockaddr_in ad;
 socklen_t lgA = sizeof(struct sockaddr_in);
 
+void addClient(int commSocket)
+{
+
+	otherClientsDS[cursor] = commSocket;
+	cursor++;
+
+}
 
 
 void *threadAccept(void *args)
 {
 	sleep(0.5);
-	struct sockaddr_in adNClient;
-	int newDSClient = accept(dSockServ, (struct sockaddr *) &adNClient, &lgA);
-	if (newDSClient==-1) perror("Accepting connection issues ");
-	else
-	{
-		int newFriendN;
-		int rec = recv(newDSClient, &newFriendN, sizeof(int), 0);
-		perror("\tTHREAD RECEIVE FROM CLIENT ");
-		printf("\tTHREAD - just accepted connection request by fellow client number %d !\n", newFriendN);
 
+	bool keepGoing = true;
+	while (keepGoing)
+	{
+		struct sockaddr_in adNClient;
+		int newDSClient = accept(dSockServ, (struct sockaddr *) &adNClient, &lgA);
+		if (newDSClient==-1) perror("Accepting connection issues ");
+		else
+		{
+			printf("=Treating a connection request in queue=\n");
+			int newFriendN;
+			int rec = recv(newDSClient, &newFriendN, sizeof(int), 0);
+			perror("\tTHREAD RECEIVE FROM CLIENT ");
+			printf("\tTHREAD - just accepted connection request by fellow client number %d !\n", newFriendN);
+
+			addClient(newDSClient);
+
+		}
 	}
 	return NULL;
 }
 
-void *receiveAndConnect(void *args)
+void *receiveAndConnect(void *args)	//THIS FUNCTION ONLY SPEAKS WITH THE SERVER!
 {
 	bool continuity = true;
 
@@ -72,12 +89,7 @@ void *receiveAndConnect(void *args)
 		else
 		{
 			printf("\tTHREAD - Successful connection to fellow client socket!\n");
-			int a=0;
-			while (otherClientsDS[a] != -7)
-			{
-				a++;
-			}
-			otherClientsDS[a] = res; //THis is the new socket descriptor that results from the connection
+			addClient(newS);
 
 			//Sending a "business card"
 			int greetMsg = n;
