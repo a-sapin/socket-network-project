@@ -14,20 +14,102 @@ int lifetime = 120; //Duration for the server program
 
 int main(int argc, char *argv[]) 
 {
-	int clients_awaited = 4;
+	//FILEPATH ARGUMENT SECTION
+			if (argc > 2 || argc < 2) 
+		    {
+		        printf("ERR-101 : Invalid number of arguments\n");
+		        printf("Server program requires only 1 argument (path to graph file)\n");
+		        return -101;
+		    }
+
+		    //Creates a char[] that represents a String for the graph file path
+		    char pathToFile[50];
+		    strcpy(pathToFile, "");
+		    strcat(pathToFile, argv[1]);
+
+		    int** tab;
+		    
+		    //Access in READMODE to the file specified by pathToFile variable at launch
+		    FILE* file = fopen(pathToFile, "r");
+		    if (file == NULL) {
+		        printf("ERR-102 : Specified path is incorrect or does not lead to any file\n");
+		        printf("Please double check the input matches the file path syntax such as folder/graph.txt\n");
+		        return -102;
+		    }
+
+
+	//OPENING AND READING THE FILE
+		    	char* line = NULL;
+        size_t len = 0;
+        ssize_t read;
+        int vertices = 0;
+
+        // Read content of chosen file using getread()
+        // Continue to scroll through the file as long as :
+        //        - File hasn't ended (getline = -1)
+        //        - Graph descriptor hasn't been reached yet (find a line that starts with 'p')
+        
+        bool startOfFileFound = false;
+
+        //Read file line-by-line and loop to ignore initial lines
+        while (startOfFileFound == false)
+        {
+            read = getline(&line, &len, file);
+
+            //If read fails or file is finished before 'p' is found at start of line
+            if (read == -1)
+            {
+                printf("ERR-103 : Unexpected end of file.\n");
+                printf("Please make sure the chosen file is of the right format.\n");
+                return -103;
+            }
+
+            //Stop looping if all lines have been skipped as intended
+            if (line[0] == 'p') startOfFileFound = true;
+        }
+
+        // Fetch amount of vertices
+        sscanf(line, "p edge %i", &vertices);
+        printf("Found graph has %i vertices\n", vertices);
+        vertices += 1;
+
+        // Two dimensional matrix links a specific leaf with its neighbours (using 0's and 1's)
+        int** voisins = (int **) malloc (vertices * sizeof(int*));
+
+        for(int i = 0; i < vertices; i++) {
+            voisins[i] = (int *) malloc (vertices * sizeof(int));
+        }
+
+        for(int i = 0; i < vertices; i++) {
+            for(int j = 0; j < vertices; j++) {
+                voisins[i][j] = 0;
+            }
+        }
+
+        while ((read = getline(&line, &len, file)) != -1) {
+
+                int s1 = 0;
+                int s2 = 0;
+
+                sscanf(line, " e %i %i", &s1, &s2);
+
+                voisins[s1][s2] = 1;
+                voisins[s2][s1] = 1;
+        }
+
+
+
+
+
+
+
+
+
+	int clients_awaited = vertices;
 	int dSock = socket(PF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in ad;
 	ad.sin_family = AF_INET;
-
-	if (argc == 1)
-	{
-		ad.sin_addr.s_addr = INADDR_ANY;
-	}
-	if (argc == 2)
-	{
-		inet_pton(AF_INET, argv[1], &(ad.sin_addr));
-
-	}
+	ad.sin_addr.s_addr = INADDR_ANY;
 	ad.sin_port = htons((short)7777);
 
 

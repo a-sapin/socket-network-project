@@ -160,6 +160,6 @@ int main(int argc, char *argv[])
   	int parameter = 21;
   	pthread_create(&id, NULL, threadAccept, &parameter); //Starting thread using method threadAccept() with "parameter" input
   	pthread_create(&id2, NULL, receiveAndConnect, NULL);
-  	sleep(30);
+  	sleep(60);
   	exit(0);
 }
