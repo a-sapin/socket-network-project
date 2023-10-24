@@ -9,7 +9,6 @@ They are then bound and connected with each other following the pattern of the g
 
 # Programmation Répartie : Première Partie du Projet
 *Arthur Sapin*
-*Abla Amareff*
 
 #### Déploiement
 L'exécution du code du projet nécessite un environnement de développement/compilation du langage C, inclus par défaut dans la majorité des systèmes Linux.
