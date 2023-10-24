@@ -1,3 +1,12 @@
+# Socket Network Project
+
+**Author:** Arthur Sapin
+
+This project was realized in 2022 as an example of a simplistic distributed algorithm, using sockets in C.
+The main program parses a graph file written in the given format, and then creates 'child processes' that will have their own sockets to communicate with each other.
+They are then bound and connected with each other following the pattern of the graph provided as parameter of program _serveur_.
+
+
 # Programmation Répartie : Première Partie du Projet
 *Arthur Sapin*
 *Abla Amareff*
